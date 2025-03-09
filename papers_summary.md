@@ -61,6 +61,67 @@ Procedure:
 
 ### Method by Dandl et al.
 
+It satisfies every four requirements by using the following loss: $$L(x,x',y',X^{obs}) = (o_1(\hat{f}(x'),y'), o_2(x,x'), o_3(x,x'), o_4(x',X^{obs}))$$
+where each requirements is satisfied by following:
+
+1. $ 
+o_1(\hat{f}(x'), y') = 
+\begin{cases}
+0 & \text{if } \hat{f}(x') \in y' \\
+\inf_{y' \in y'} |\hat{f}(x') - y'| & \text{else}
+\end{cases} $ 
+is the Manhattan metric ($L_1$ norm)
+
+2. $ o_2 = \frac{1}{p} \sum_{j=1}^{p} \delta_G (x_j, x'_j) $ is the *Gower* distance, with $p$ being the number of features and $\delta_G(x_j, x'_j) = \begin{cases}
+\frac{1}{\hat{R}_j}|x_j - x'_j| & \text{if } x_j \text{ numerical} \\
+\mathbb{I}_{x_j \neq x'_j} & \text{if } x_j \text{ categorical}
+\end{cases}
+$ with $\hat{R}_j$ the observed value range, it helps to scale $\delta_G$ for all features between  0 and 1
+
+3. $o_3(x, x') = ||x - x'||_0 = \sum_{j=1}^{p} \mathbb{I}_{x'_j \neq x_j}$
+
+4. $o_4(x', \mathbf{X}^{obs}) = \frac{1}{p} \sum_{j=1}^{p} \delta_G(x'_j, x_j^{[1]})$, it infers how "likely" a data point is using $X^{obs}$, i.e. $x_j^{[1]} \in X^{obs}$
+
+This loss want to optimize all four terms simultaneously by using **Nondominated Sorting Genetic ALgorithm**: denotes the fitness of a counterfactual by its vector of objective values $(o_1, o_2, o_3, o_4)$, the lower the values, the "fitter" it is.
+
+Steps:
+
+1.  Generate a group of counterfactual candidates.
+
+    * Initialize each of them by changing randomly some features compared to our instance $x$ to be explained.
+
+2. Evaluate each candidate using the four objective functions.
+
+3. **Select** the fitter candidates (i.e. they are more likely to be selected)
+
+4. The candidates selected are then pairwise **recombined** to produce children that are similar to them by:
+
+    * averaging their numerical values
+    * crossing over their categorical values
+
+5. Perform a slightly mutation of the feature values of the children to explore the whole feature space.
+
+6. Now we have two resulting groups: 
+
+    * the parents
+    * the children
+
+   From each of them, we want only the best half, thus we perform:
+    
+    * *Nondominated Sorting Algorithm* to sorting the candidates according to their objective values
+
+    * *Crowding Distance Sorting*, it are applied only when the first algorithm evaluate equally good the candidates, to sorting them according to their diversity
+
+7. Given the ranking, we select the most promising and/or the most diverse half of the candidates. Repeating from this resulting set to achieve low objective values
+
 ## Advantages
 
+- **The interpretation of counterfactual explanations is very clear**: If the feature values of an instance are changed according to the counterfactual, the prediction changes to the predefined prediction.
+
+- The **counterfactual method does not require access to the data or the model**.
+
+- **The counterfactual explanation method is relatively easy to implement**
+
 ## Disadvantages
+
+- **Rashomon effect**
