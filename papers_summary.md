@@ -82,7 +82,7 @@ $ with $\hat{R}_j$ the observed value range, it helps to scale $\delta_G$ for al
 
 4. $o_4(x', \mathbf{X}^{obs}) = \frac{1}{p} \sum_{j=1}^{p} \delta_G(x'_j, x_j^{[1]})$, it infers how "likely" a data point is using $X^{obs}$, i.e. $x_j^{[1]} \in X^{obs}$
 
-This loss want to optimize all four terms simultaneously by using **Nondominated Sorting Genetic ALgorithm**: denotes the fitness of a counterfactual by its vector of objective values $(o_1, o_2, o_3, o_4)$, the lower the values, the "fitter" it is.
+This loss want to optimize all four terms simultaneously by using **Nondominated Sorting Genetic Algorithm**: denotes the fitness of a counterfactual by its vector of objective values $(o_1, o_2, o_3, o_4)$, the lower the values, the "fitter" it is.
 
 Steps:
 
@@ -125,3 +125,92 @@ Steps:
 ## Disadvantages
 
 - **Rashomon effect**
+
+# Isolation Forest
+
+[Paper](https://www.lamda.nju.edu.cn/publication/icdm08b.pdf)
+
+## Isolation and Isolation Trees
+
+It is a model-based methods that explicitly isolates anomalies instead of profiles the normal points.
+
+It is an opposite approach to the classical ones like:
+
+- *classication-based model*
+- *clustering-based methods*
+
+Isolating anomalies, we can exploit some quantitative properties:
+
+- anomalies << normal instances
+- have `(attribute-values)` very different from those of normal instances
+
+This method construct a tree, **Isolation Tree** (the opposite of the classical (Profiling) Tree),in which the anomalies are isolated closer to the root, while the normal instance are isolated at the deeper end of the tree.
+
+So can scale up to handle more larger data size and high-dimensional problem.
+
+**Isolation Forest** = esembles of Isolation Trees; the variables are:
+
+- `number_of_trees`
+- `sub_sampling_size`
+
+In general a *normal point* requires more (random) partitions to be isolated than *anomaly point* and the latter have path lengths shorter than normal instances.
+
+**Isolation Tree**: let $T$ be a node of an isolation tree. $T$ is either an *external-node* with no child, or an *internal-node* with one test and exactly two daughter nodes
+$(Tl,Tr)$. A *test* consists of an attribute $q$ and a split value $p$ such that the test $q<p$ divides data points into $Tl$ and $Tr$.
+
+- It is a *proper binary tree* (each node have zero or two daughter)
+- $n$ external nodes
+- $n-1$ internal nodes 
+- total number of nodes = $2n-1$
+
+Stop conditions while building an iTree:
+
+1. height limit reached
+2. $|X|=1$
+3. all data in $X$ have the same values
+
+**Path Length** $h(x)$ is measured by the number of edges traversed to reach $x$ from the root.
+
+<!-- DUBBIO 1-->
+Deriving anomaly score from $h(x)$ is difficult, based on *maximum height* or *average height*
+
+## Characteristic of Isolation Trees
+
+- Anomalies are identified by having shorter path lengts
+- Each iTree in the ensemble acts as "expert" to target different anomalies.
+- iForest works well with a partial model, i.e. without using the majority of dataset (which contains the normal instances), so with a small sample size.
+- *Swamping* problem: more partitions required when a normal instance is too close to an anomaly.
+- *Masking* is the existence of too many anomalies concealing their own existence. When an anomaly cluster is too large and dense, it causes:
+
+    * increasing the number of partitions
+    * longer paths for anomalies, so more difficult to be detected
+
+Hence a sub-sampling could help to solve these problems, another demonstration that iForest works better with small sample size.
+
+## Anomaly Detection using iForest
+
+Two-stage process:
+
+1. *Training* - building iTrees using sub-samples of the training set
+2. *Testing* - test instrances through iTrees to obtain an anomaly score for each instance
+
+### Training stage
+
+iTrees are constructed by recursively partitioning the given training set until:
+
+- instances are isolated
+- a specific tree height is reached
+
+The data points which have shorter-than-average path lengths, those points are more likely to be anomalies.
+
+*See the algorithms in the paper*
+
+**Complexity**: $O(t\psi log\psi)$
+
+### Test stage
+
+An anomaly score $s$ is derived from the *expected path length* $E(h(x))$ for each test instance.
+
+<!-- DUBBIO 2 -->
+
+**Complexity**: $O(ntlgo\psi)$
