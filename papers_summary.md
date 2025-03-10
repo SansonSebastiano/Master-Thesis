@@ -155,7 +155,7 @@ So can scale up to handle more larger data size and high-dimensional problem.
 
 In general a *normal point* requires more (random) partitions to be isolated than *anomaly point* and the latter have path lengths shorter than normal instances.
 
-**Isolation Tree**: let $T$ be a node of an isolation tree. $T$ is either an *external-node* with no child, or an *internal-node* with one test and exactly two daughter nodes
+**Isolation Tree**: let $T$ be a node of an isolation tree. $T$ is either an *external-node* with no child, or an *internal-node* with one test (i.e. a threshold) and exactly two daughter nodes
 $(Tl,Tr)$. A *test* consists of an attribute $q$ and a split value $p$ such that the test $q<p$ divides data points into $Tl$ and $Tr$.
 
 - It is a *proper binary tree* (each node have zero or two daughter)
@@ -172,7 +172,7 @@ Stop conditions while building an iTree:
 **Path Length** $h(x)$ is measured by the number of edges traversed to reach $x$ from the root.
 
 <!-- DUBBIO 1-->
-Deriving anomaly score from $h(x)$ is difficult, based on *maximum height* or *average height*
+Deriving anomaly score (see DIFFI paper) from $h(x)$ is difficult, based on *maximum height* or *average height*
 
 $c(x)$ needed to normalize $h(x)$, $c(x)$ is the average of $h(x)$ ????
 
@@ -228,3 +228,92 @@ With small $\psi$ the AUC converges very quickly. Then the processing time incre
 It has also a low processing time even in high dimensional data (with irrelevant attributes).
 
 It works well also without outliers.
+
+# Interpretable Anomaly Detection with DIFFI: Depth-base Isolation Forest Feature Importance
+
+DNNs present some drawbacks in several real-world scenario, to be considered appliable in AD tasks.
+
+Remember that AD is unsupervised task.
+
+DIFFI is: 
+- model-specific w.r.t. iForest
+- a global method, but there is also a local version.
+- post-hoc method
+
+For each iTree, will be considered only the boostrap sample, rather than the entire training set.
+
+<!-- DUBBIO 3 -->
+Intuition 2???
+
+## ICC (Induced Imbalance Coefficient)
+
+$$
+\lambda(v) = \begin{cases}
+0, & \text{if } n_l(v) = 0 \text{ or } n_r(v) = 0 \\
+\tilde{\lambda}(v), & \text{otherwise}
+\end{cases}
+$$
+where
+$$
+\tilde{\lambda}(v) = g \left( \frac{\max(n_l(v), n_r(v))}{n(v)} \right)
+$$
+and $g(\cdot)$ is a scaling function mapping its input into the interval $[0.5, 1]$.
+In the first case, the split results useless, while in the second one there is an *isolating splitting*: this happens when either the left or the the right child receives exactly one data point and is assigned the highest possible IIC, i.e. 1.
+
+## CFIs (Cumulative Features Importance) update
+
+- $I_I$: CFI for inliers
+- $I_O$: CFI for outliers
+
+**Both are $p$-dimensional vector, where the $j$-th component represent the CFI for $j$-th feature.**
+The update of the CFI is done in additive fashion.
+
+The procedure (for $I_I$, but is the analogous for $I_O$) is iterating over all iTree $t$ in the iForest, over the $\mathcal{P}_{I,t}$ (the subset of predicted inliers).
+
+Then for generic $\boldsymbol{x}_I\in\mathcal{P}_{I,t}$, we iterate over the internal nodes in its path $Path(\boldsymbol{x}_I, t)$, then update the $j$-th component of $I_I$, that it the splitting feature associate to a generic internal node.
+
+**(See the update rule in the paper)**
+
+## GFIs computation
+
+Problem: selecting a splitting feature randomly cause an unfair CFI high value, because it is selected more frequently than others.
+
+Define so a *features counter*, $C_I* for inliers and $C_O$ for outliers: a $p$-dimensional vector in which the $j$-th component represents how many times such feature is appeared while updating CFIs.
+
+$$
+GFI = \frac{I_O/C_O}{I_I/C_I}
+$$
+
+**(See the algorithm in the paper)**
+
+## Local-DIFFI
+
+For the intepretation of individual predictions, using the similar procedure above is quite impossible (the reasons are written in the paper).
+
+So given a predicted outliers $\boldsymbol{x_O}$:
+$$
+LFI(\boldsymbol{x_O}) = \frac{I_O^{loc}}{C_O^{loc}}
+$$
+where:
+- $C_O^{loc}$ is the features counter
+- $I_O^{loc}$ is the CFI associated to the predicted outliers. 
+
+**(See  the update rule in the paper)**
+
+## Unsupervised feature selection with global DIFFI
+
+DIFFI can be exploited to perform feature selection in the context of AD problems.
+
+The procedure consits in training $N_{fs}$ different instances of iForest, obtained with the same training set. The global DIFFI scores associated with each instance of iForest are then aggregated to define a ranking on the features:
+
+1. Define $S_{agg} \in \mathbb{R}^p$, with $p$ as the number of features
+2. For each iForest:
+    * sorting DIFFI scores in decreasing order
+   4 * update $S_{agg}$
+3. $S_{agg}$ is then used to define a ranking over the features.
+
+**(See more details about the above procedure in the paper)**
+
+The procedure based on DIFFI requires
+minimal – if any – hyperparameters tuning: the only hyperparameters
+are inherited from the underlying proxy model.
