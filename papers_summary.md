@@ -174,6 +174,8 @@ Stop conditions while building an iTree:
 <!-- DUBBIO 1-->
 Deriving anomaly score from $h(x)$ is difficult, based on *maximum height* or *average height*
 
+$c(x)$ needed to normalize $h(x)$, $c(x)$ is the average of $h(x)$ ????
+
 ## Characteristic of Isolation Trees
 
 - Anomalies are identified by having shorter path lengts
@@ -214,3 +216,15 @@ An anomaly score $s$ is derived from the *expected path length* $E(h(x))$ for ea
 <!-- DUBBIO 2 -->
 
 **Complexity**: $O(ntlgo\psi)$
+
+### Evaluation
+
+iForest outperforms ORCA, LOF and Random Forest, in term of AUC and in processing time.
+
+Linear time complexity, with a low memory requirement.
+
+With small $\psi$ the AUC converges very quickly. Then the processing time increases very modestly when $\psi$ increases enormously.
+
+It has also a low processing time even in high dimensional data (with irrelevant attributes).
+
+It works well also without outliers.
