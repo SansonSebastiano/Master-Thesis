@@ -317,3 +317,94 @@ The procedure consits in training $N_{fs}$ different instances of iForest, obtai
 The procedure based on DIFFI requires
 minimal – if any – hyperparameters tuning: the only hyperparameters
 are inherited from the underlying proxy model.
+
+# Optimal Counterfactual Explanations in Tree Ensembles
+
+This paper proposes:
+
+- Efficient mathematical models to search for counterfactual explanations in tree ensembles. Applicable to heterogeneus datasets.
+
+- Integration with iForest for conterfactual explanations
+
+- Extensions of the (flexible) model that can be adapted to each specific situation + *plausibility and actionability*
+
+## Background
+
+### Mixed Integer Programming
+
+### Counterfactual Explanations in Tree Ensembles
+
+Given a training set $\{{\mathbf{x}_k, c_k}\}_{k=1}^n$ in which $\mathbf{x}_k \in \mathbb{R}^p$ is a sample with $p$-dimensional feature vector and a class $c_k \in C$.
+
+A tree ensemble $\Tau$ learns a set of tree $t \in \Tau$ returning then a class probability, in which the corresponding class should be the one that maximizes th weighted sum of probabilities: $F_\Tau(\boldsymbol{x}) = \arg \max_c \sum w_t F_{tc}(\boldsymbol{x})$, where $F_{tc} : \mathcal{X} \rightarrow [0, 1]$. 
+
+Considering than the following optimization problem:
+$$
+\min f_{\hat{x}}(\mathbf{x}) \\
+\text{s.t.} \quad F_{\mathcal{T}}(\mathbf{x}) = c^* \\
+\mathbf{x} \in X^{\text{P}} \cap X^{\text{A}}
+$$
+in which $\hat{\boldsymbol{x}}$ is the origin data point and $c^*$ is the desired prediction.
+While polytopes $X^P$ and $X^A$ represent the space of *plausible* and *actionable* counterfactual explanations (CE) respectively.
+
+- **Plausibility**: this coinstraint should ensure that a CE respecs the structure of the data and that it is located in a region that has a sufficiently large density examples (exploiting the iForest)
+
+- **Actionability**: concern the trajectory between $\hat{\boldsymbol{x}}$ and $\boldsymbol{x}$
+
+## Methodology
+
+1. Describing the variables and constraints that characterize the branches (of the tree) taken by the counterfactual example.
+
+2. Including additional variables and constraints, modelling the counterfactual example's feature values and ensuring compatibility with all the branches choices.
+
+### Branch Choices
+
+**(See all the sets/variables definition in the paper)**
+
+$$
+\lambda_{td} = \begin{cases}
+1 & \text{if the counterfactual descends towards the left branch} \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+### Feature consistency with the splits
+
+The proposed method could be applied to heterogeneous dataset
+
+- Numerical features
+
+- Binary features
+
+- Categorical features
+
+### Objective function
+
+$$
+f(\mathbf{x}, \boldsymbol{\mu}, \boldsymbol{\nu}) = f^{\text{N}}(\boldsymbol{\mu}) + f^{\text{B}}(\mathbf{x}) + f^{\text{C}}(\boldsymbol{\nu})
+$$
+
+For *binary* and *categorical* features, since the corresponding model give direct access to the values:
+
+- $f^{\text{B}}(\mathbf{x}) = \sum_{i \in I_{\text{B}}} (c_i^{\text{TRUE}} x_i + c_i^{\text{FALSE}} (1 - x_i))$
+
+- $f^{\text{C}}(\boldsymbol{\nu}) = \sum_{i \in I_{\text{C}}} \sum_{j \in C_i} c_i^j \nu_i^j.$
+
+While for *numerical* features can be accessed directly/indirectly.
+
+This model gives an extensible framework for efficiently modeling most existing data types, decision-tree structures, and objectives
+
+### Domain knowledge and actionability constraints
+
+### iForest for Plausability
+
+Isolation forests are trained to return an outlier score for any sample, inversely proportional to its average path depth within a set of randomized trees grown to full extent on random sample subsets. Therefore, constraining this average depth controls the outlier score (and consequently the plausibility) of the counterfactual explanation.
+
+
+# FOCUS: Flexible Optimizable Counterfactual Explanations for Tree Ensembles
+
+# Counterfactual explanations and how to find them: literature review and benchmarking
+
+PER ULTIMO (PASSA AD XAI)
+
+It is a survey 
