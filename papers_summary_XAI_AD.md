@@ -403,6 +403,67 @@ Isolation forests are trained to return an outlier score for any sample, inverse
 
 # FOCUS: Flexible Optimizable Counterfactual Explanations for Tree Ensembles
 
+Previously the problem of counterfactual explanations was seen as a gradient-based optimization task, therefore only for differentiable models. This paper proposes to extend this to non-differentiable models, such as ensemble trees, exploiting probabilistic model.
+
+**Optimal counterfactual explanations**: the *minimal* changes to the input required to change the outcome.
+
+*Counterfactual explanations are based on counterfactual examples*: generated instances that are close to an existing instance but have an alternative prediction.
+
+The difference between the original instance and the counterfactual example is the counterfactual explanation.
+
+The method proposed is:
+- effective
+- efficient
+- reliable
+- model-specific
+
+*Adversarial examples* (*fool* the model) are a type of counterfactual example (*explain* the model), but with incorrect alternative prediction.
+
+In the literature were been proposed differentiable versions of the ensemble tree, however they are not optimal for counterfactual explanations.
+
+## Problem definition
+
+*(See in the paper)*
+
+## Method
+
+### Loss function definition
+
+$$
+\tilde{\mathcal{L}}(x, \bar{x} | f, \tilde{f}, d) = \mathcal{L}_{pred}(x, \bar{x} | f, \tilde{f}) + \beta \cdot \mathcal{L}_{dist}(x, \bar{x} | d)
+$$
+approximates the complete loss $\mathcal{L}_{pred}(x, \bar{x} | f, d)$, where:
+- $ \mathcal{L}_{pred}(x, \bar{x} | f, \tilde{f}) = \mathbb{1}\left[\arg\max_{y} f(y | x) = \arg\max_{y'} f(y' | \bar{x})\right] \cdot \tilde{f}(y' | \bar{x}) $ is the approximate prediction loss
+- $\tilde{f}$ is the approximation, derived from the original model.
+- $\beta \in $ a weight
+
+Since we have the approximation, it can be used, by minizing it, to find the optimal counterfactual example.
+
+### Tree-based models and their approximation
+
+To obtain the differentiable approximation $\tilde{f}$ of $f$, a probabilistic approximation of the original tree ensemble should be constructed.
+
+1. Define the tree-based models (*see it in the paper*)
+
+2. Then approximate them, exploiting *sigmoid* and *softmax* functions.
+    
+    * Hyperparameters and their effects:
+        - $\sigma$ for sigmoid
+        - temperature $\tau$  for softmax
+
+### FOCUS
+
+It can be applied to iForest?
+
+**Flexible Optimizable CounterfactUal Explanations for Tree EnsembleS**
+
+It takes as input:
+- an instance $x$
+- a tree-based classifier $f$
+- two hyperparameters $\sigma$ and $\tau$ to create the approximation $\tilde{f}$
+
+## Experiments
+
 # Counterfactual explanations and how to find them: literature review and benchmarking
 
 PER ULTIMO (PASSA AD XAI)
