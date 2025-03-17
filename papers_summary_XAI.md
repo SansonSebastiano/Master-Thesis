@@ -85,8 +85,69 @@ Here the mapping function converts, into the original space, 1 means the input i
     * this avoid the retraining of the model and are computed less than $2^{|F|}$ differences
 
 - **Quantitative input influence** is a broader framework that addresses more than feature attributions.
-However, as part of its method it independently proposes a sampling approximation to Shapley values
-that is nearly identical to Shapley sampling values. It is thus another additive feature attribution
-method
+However, as part of its method it independently proposes a sampling approximation to Shapley values that is nearly identical to Shapley sampling values. It is thus another additive feature attribution method.
 
 ## Simple Properties Uniquely Determine Additive Feature Attributions
+
+1. **Local accuracy**: approximating $f$, given $x$, it is required that
+$$
+f(x) = g(x') = \phi_0 + \sum_{i=1}^M \phi_i x_i'
+$$
+where $x = h_x(x')$
+
+2. **Missingness**: the features in the original input space, that are not present in the feature space of the simplified input, should have no impact.
+$$
+x_i' = 0 \implies \phi_i = 0
+$$
+
+3. **Consistency** ???
+
+- **Theorem 1**:  only one possible explanation model $g$ follows Definition 1 and satisfies Properties 1, 2 and 3
+
+## SHAP values
+
+### Model-Agnostic Approximations
+
+Here are assumed the feature independence to approximating conditional expectations. The SHAP values can be estimated directly by using:
+- Shapley sampling values
+- Quantitative Input Influence 
+
+**Kernel SHAP (Linear LIME + Shapley values)**
+
+LIME uses a linear explanation model to locally approximate $f$.
+
+It choices for the parameters (listed in the paper) are made heuristically $\implies$ local *accuracy* and/or *consistency* are violated $\implies$ **Sharpley Kernel theorem**...
+
+### Model-Specific Approximation
+
+More faster than model-agnostic approximation
+
+**Linear SHAP**: given linear models, if is assumed input feature independence, SHAP values can be approximated directly from the model's weight coefficients.
+
+**Low-Order SHAP**
+
+**Max SHAP**
+
+**Deep SHAP (DeepLIFT + Shapley values)**
+
+Combining DeepLIFT (recursively) and Shapley values: SHAP values are computed for smaller components of the network into SHAP values for the whole network.
+
+
+# ACME
+
+Taken SHAP as inspiration, AcME is a model-agnostic approach that are faster than tha Kernel SHAP variant. 
+AcME does not require any retraining.
+It provides similar global explanation to those provided by SHAP, in a fraction of the computation time.
+
+## Global interpretability for regression tasks
+
+1. Compute the baseline vector: mean values of the features
+2. Replace the $j$-th variable with the quantile $q$, creating a new vector from the baseline one
+3. With these new vectors as rows, compose the relative matrix
+4. Compute predictions associated to each row
+5. Calculate the standardized effect
+6. Compute the score for each feature by averaging the magnitude of standardized effect
+
+## Local interpretability for regression tasks
+
+Similar procedure but the baseline vector is equal to the specific data point to be explained
