@@ -6,17 +6,17 @@
 
 This method are appliable both for *model-agnostic* and *model-specific* (this chapter is focused only on the first one)
 
-**Formal Definition**: given a classifier $b$ and its outcome $y = b(x)$, a counterfactual explanation consists of an instance $x'$ such that $b(x') \neq y$ and the difference between $x$ and 4x'$ is *minimal*
+**Formal Definition**: given a classifier $b$ and its outcome $y = b(x)$, a counterfactual explanation consists of an instance $x'$ such that $b(x') \neq y$ and the difference between $x$ and $x'$ is *minimal*
 
 Counterfactuals are **contrastive** and **selective**.
 
 *Rashomon effect*: same results but contraditional explanations -> solution:
 - reporting all conterfactual explanations
-- adopting a criterion to evaluate for selecting the best one:
+- adopting a criterion to evaluate for selecting the best one (**requirements**):
     1. *A counterfactual instance produces the predefined prediction as closely as possible.* Generally it is not possible: relaxing the above condition.
-    2. *A counterfactual should be as similar as possible to the instance regarding feature values.* For measuring this quality it is sufficient to measure the distance between two instance $ L_0 $
-    3. *Multiple diverse counterfactual explanations*: trying different ways to get the desired outcome
-    4. *A counterfactual instance should have legal feature values*
+    2. *A counterfactual should be as similar as possible to the instance regarding feature values.* For measuring this quality it is sufficient to measure the distance between two instances $L_0$ (*minimality*)
+    3. *Multiple diverse counterfactual explanations*: trying different ways to get the desired outcome (*diversity*)
+    4. *A counterfactual instance should have legal feature values* (*plausibility*)
 
 ## Properties of counterfactual explanations
 
@@ -74,7 +74,7 @@ Procedure:
     * increase $\lambda$
     * optimize the loss with the current counterfactual 
     * return the counterfactual that minimizes the loss
-5. Repeat steos 2-4 and return the list of counterfactuals that minimize the loss
+5. Repeat steps 2-4 and return the list of counterfactuals that minimize the loss
 
 *Disadvantage*: take into account only the first two requirements
 
@@ -191,7 +191,7 @@ Stop conditions while building an iTree:
 **Path Length** $h(x)$ is measured by the number of edges traversed to reach $x$ from the root.
 
 <!-- DUBBIO 1-->
-Deriving anomaly score (see DIFFI paper) from $h(x)$ is difficult, based on *maximum height* or *average height*
+Deriving **anomaly score** (see DIFFI paper) from $h(x)$ is difficult, based on *maximum height* or *average height*
 
 $c(x)$ needed to normalize $h(x)$, $c(x)$ is the average of $h(x)$ ????
 
@@ -213,7 +213,7 @@ Hence a sub-sampling could help to solve these problems, another demonstration t
 Two-stage process:
 
 1. *Training* - building iTrees using sub-samples of the training set
-2. *Testing* - test instrances through iTrees to obtain an anomaly score for each instance
+2. *Testing* - test instances through iTrees to obtain an anomaly score for each instance
 
 ### Training stage
 
@@ -250,7 +250,7 @@ It works well also without outliers.
 
 # Interpretable Anomaly Detection with DIFFI: Depth-base Isolation Forest Feature Importance
 
-DNNs present some drawbacks in several real-world scenario, to be considered appliable in AD tasks.
+This paper proposes a solution to solving the main problem of iForest: *the lack of interpretability*
 
 Remember that AD is unsupervised task.
 
@@ -297,7 +297,7 @@ Then for generic $\boldsymbol{x}_I\in\mathcal{P}_{I,t}$, we iterate over the int
 
 Problem: selecting a splitting feature randomly cause an unfair CFI high value, because it is selected more frequently than others.
 
-Define so a *features counter*, $C_I* for inliers and $C_O$ for outliers: a $p$-dimensional vector in which the $j$-th component represents how many times such feature is appeared while updating CFIs.
+Define so a *features counter*, $C_I$ for inliers and $C_O$ for outliers: a $p$-dimensional vector in which the $j$-th component represents how many times such feature is appeared while updating CFIs.
 
 $$
 GFI = \frac{I_O/C_O}{I_I/C_I}
@@ -355,7 +355,7 @@ This paper proposes:
 
 Given a training set $\{{\mathbf{x}_k, c_k}\}_{k=1}^n$ in which $\mathbf{x}_k \in \mathbb{R}^p$ is a sample with $p$-dimensional feature vector and a class $c_k \in C$.
 
-A tree ensemble $\Tau$ learns a set of tree $t \in \Tau$ returning then a class probability, in which the corresponding class should be the one that maximizes th weighted sum of probabilities: $F_\Tau(\boldsymbol{x}) = \arg \max_c \sum w_t F_{tc}(\boldsymbol{x})$, where $F_{tc} : \mathcal{X} \rightarrow [0, 1]$. 
+A tree ensemble $\mathcal{T}$ learns a set of tree $t \in \mathcal{T}$ returning then a class probability, in which the corresponding class should be the one that maximizes the weighted sum of probabilities: $F_\mathcal{T}(\boldsymbol{x}) = \arg \max_c \sum w_t F_{tc}(\boldsymbol{x})$, where $F_{tc} : \mathcal{X} \rightarrow [0, 1]$. 
 
 Considering than the following optimization problem:
 $$
@@ -363,10 +363,11 @@ $$
 \text{s.t.} \quad F_{\mathcal{T}}(\mathbf{x}) = c^* \\
 \mathbf{x} \in X^{\text{P}} \cap X^{\text{A}}
 $$
-in which $\hat{\boldsymbol{x}}$ is the origin data point and $c^*$ is the desired prediction.
+in which $\hat{\boldsymbol{x}}$ is the origin data point and $c^*$ is the desired prediction and $f_{\hat{x}}$ is a separable convex cost that represents
+how difficult it is to move from $\hat{x}$ to $x$.
 While polytopes $X^P$ and $X^A$ represent the space of *plausible* and *actionable* counterfactual explanations (CE) respectively.
 
-- **Plausibility**: this coinstraint should ensure that a CE respecs the structure of the data and that it is located in a region that has a sufficiently large density examples (exploiting the iForest)
+- **Plausibility**: this coinstraint should ensure that a CE respects the structure of the data and that it is located in a region that has a sufficiently large density examples (exploiting the iForest)
 
 - **Actionability**: concern the trajectory between $\hat{\boldsymbol{x}}$ and $\boldsymbol{x}$
 
@@ -456,7 +457,7 @@ approximates the complete loss $\mathcal{L}_{pred}(x, \bar{x} | f, d)$, where:
 - $\tilde{f}$ is the approximation, derived from the original model.
 - $\beta \in $ a weight
 
-Since we have the approximation, it can be used, by minizing it, to find the optimal counterfactual example.
+Since we have the approximation, it can be used, by minimizing it, to find the optimal counterfactual example.
 
 ### Tree-based models and their approximation
 
