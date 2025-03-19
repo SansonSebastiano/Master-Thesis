@@ -6,6 +6,8 @@
 
 This method are appliable both for *model-agnostic* and *model-specific* (this chapter is focused only on the first one)
 
+**Formal Definition**: given a classifier $b$ and its outcome $y = b(x)$, a counterfactual explanation consists of an instance $x'$ such that $b(x') \neq y$ and the difference between $x$ and 4x'$ is *minimal*
+
 Counterfactuals are **contrastive** and **selective**.
 
 *Rashomon effect*: same results but contraditional explanations -> solution:
@@ -15,6 +17,23 @@ Counterfactuals are **contrastive** and **selective**.
     2. *A counterfactual should be as similar as possible to the instance regarding feature values.* For measuring this quality it is sufficient to measure the distance between two instance $ L_0 $
     3. *Multiple diverse counterfactual explanations*: trying different ways to get the desired outcome
     4. *A counterfactual instance should have legal feature values*
+
+## Properties of counterfactual explanations
+
+- **Validity**: $b(x) \neq b(x')$
+- **Minimality**: $x'$ is *mimimal* iff $\nexists x''$ s.t. $|\delta_{x,x''}| < |\delta_{x,x'}|$ where $\delta_{.,.}$ is the distance
+- **Similarity**: a counterfactual $x'$ should be similar to $x$, i.e. $d(x, x') < $ $\epsilon$ 
+- **Plausibility**: Given a reference population $X$, a counterfactual $x'$ is plausible if the feature values in $x'$ are coherent with those in $X$. This practically means that the feature values of $x'$ should not be higher/smaller than those observable in $X$, and that $x'$ should not be labeled as an outlier with respect to the instances in $X$. Plausibility helps in increasing trust towards the explanation: it would be hard to trust a counterfactual if it is a combination of features that are unrealistic with respect to existing examples
+- **Discriminative**: A counterfactual $x'$ should show a high discriminative power for recognizing the reasons for the decision outcome
+- **Actionability**
+- **Causality**
+- **Diversity**
+
+## Properties of counterfactual explainers
+
+- **Efficiency**
+- **Stability**
+- **Fairness**
 
 ## Generating counterfactual explanations
 
@@ -326,7 +345,7 @@ This paper proposes:
 
 - Integration with iForest for conterfactual explanations
 
-- Extensions of the (flexible) model that can be adapted to each specific situation + *plausibility and actionability*
+- Extensions of the (flexible) model that can be adapted to each specific situation + *plausibility and actionability* (i.e. action that is possible to do to change the outcome)
 
 ## Background
 
