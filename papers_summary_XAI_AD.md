@@ -486,6 +486,4 @@ It takes as input:
 
 # Counterfactual explanations and how to find them: literature review and benchmarking
 
-PER ULTIMO (PASSA AD XAI)
-
 It is a survey 
