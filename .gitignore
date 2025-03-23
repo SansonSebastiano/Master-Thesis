@@ -1,3 +1,6 @@
+# Ignoring mt_env folder and all its contents
+mt_env/
+
 # Python virtual environments
 venv/
 env/
