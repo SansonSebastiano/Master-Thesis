@@ -133,13 +133,13 @@ def get_fs_dataset(dataset_id, seed):
     return X, y, contamination  
 
 
-def diffi_ranks(X, y, n_trees, max_samples, n_iter):
+def diffi_ranks(X, y, n_trees, max_samples, n_iter, contamination: float | str = 'auto'):
     f1_all, fi_diffi_all = [], []
     for k in range(n_iter):
         # ISOLATION FOREST
         # fit the model
         iforest = IsolationForest(n_estimators= n_trees, max_samples=max_samples, 
-                                  contamination='auto', random_state=k)
+                                  contamination=contamination, random_state=k)
         iforest.fit(X)
         # get predictions
         y_pred = np.array(iforest.decision_function(X) < 0).astype('int')
