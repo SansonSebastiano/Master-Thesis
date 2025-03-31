@@ -134,7 +134,7 @@ def get_fs_dataset(dataset_id, seed):
 
 
 def diffi_ranks(X, y, n_trees, max_samples, n_iter, contamination: float | str = 'auto'):
-    f1_all, fi_diffi_all = [], []
+    f1_all, fi_diffi_all, features_per_forest = [], [], []
     for k in range(n_iter):
         # ISOLATION FOREST
         # fit the model
@@ -142,19 +142,23 @@ def diffi_ranks(X, y, n_trees, max_samples, n_iter, contamination: float | str =
                                   contamination=contamination, random_state=k)
         iforest.fit(X)
         # get predictions
-        y_pred = np.array(iforest.decision_function(X) < 0).astype('int')
+        y_pred = np.array(iforest.decision_function(X) < 0).astype('int')   # > 0 -> True -> 1; < 0 -> False -> 0 
         # get performance metrics
         f1_all.append(f1_score(y, y_pred))
         # diffi
         fi_diffi, _ = interp.diffi_ib(iforest, X, adjust_iic=True)
         fi_diffi_all.append(fi_diffi)
+        # get features per forest
+        features_per_forest.append([tree.tree_.feature for _, tree in enumerate(iforest.estimators_)])
     # compute avg F1 
     avg_f1 = np.mean(f1_all)
     # compute the scores
     fi_diffi_all = np.vstack(fi_diffi_all)
+    fi_diffi_means = np.mean(fi_diffi_all, axis=0)
+    fi_diffi_std = np.std(fi_diffi_all, axis=0)
     scores = logarithmic_scores(fi_diffi_all)
     sorted_idx = np.flip(np.argsort(scores))
-    return sorted_idx, avg_f1
+    return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest
 
 
 def fs_datasets_hyperparams(dataset):
