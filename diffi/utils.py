@@ -134,13 +134,15 @@ def get_fs_dataset(dataset_id, seed):
 
 
 def diffi_ranks(X, y, n_trees, max_samples, n_iter, contamination: float | str = 'auto'):
-    f1_all, fi_diffi_all, features_per_forest = [], [], []
+    f1_all, fi_diffi_all, features_per_forest, iforests = [], [], [], []
     for k in range(n_iter):
         # ISOLATION FOREST
         # fit the model
-        iforest = IsolationForest(n_estimators= n_trees, max_samples=max_samples, 
+        iforest = IsolationForest(n_estimators=n_trees, max_samples=max_samples, 
                                   contamination=contamination, random_state=k)
         iforest.fit(X)
+        # get estimators
+        iforests.append(iforest)
         # get predictions
         y_pred = np.array(iforest.decision_function(X) < 0).astype('int')   # > 0 -> True -> 1; < 0 -> False -> 0 
         # get performance metrics
@@ -158,7 +160,7 @@ def diffi_ranks(X, y, n_trees, max_samples, n_iter, contamination: float | str =
     fi_diffi_std = np.std(fi_diffi_all, axis=0)
     scores = logarithmic_scores(fi_diffi_all)
     sorted_idx = np.flip(np.argsort(scores))
-    return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest
+    return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, iforests
 
 
 def fs_datasets_hyperparams(dataset):
