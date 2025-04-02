@@ -173,3 +173,95 @@ def _get_iic(estimator, predictions, is_leaves, adjust_iic):
     return lambda_
 
 
+def diffi_ib_tmp(iforest, X, adjust_iic=True): # "ib" stands for "in-bag"
+    fi_inliers_ib_per_tree, fi_outliers_ib_per_tree = [], []
+    # start time
+    start = time.time()
+    # initialization
+    num_feat = X.shape[1] 
+    estimators = iforest.estimators_
+    cfi_outliers_ib = np.zeros(num_feat).astype('float')
+    cfi_inliers_ib = np.zeros(num_feat).astype('float')
+    counter_outliers_ib = np.zeros(num_feat).astype('int')
+    counter_inliers_ib = np.zeros(num_feat).astype('int')
+    in_bag_samples = iforest.estimators_samples_
+    # for every iTree in the iForest
+    for k, estimator in enumerate(estimators):
+        # get in-bag samples indices
+        in_bag_sample = list(in_bag_samples[k])
+        # get in-bag samples (predicted inliers and predicted outliers)
+        X_ib = X[in_bag_sample,:]
+        as_ib = decision_function_single_tree(iforest, k, X_ib)
+        X_outliers_ib = X_ib[np.where(as_ib < 0)]
+        X_inliers_ib = X_ib[np.where(as_ib > 0)]
+        if X_inliers_ib.shape[0] == 0 or X_outliers_ib.shape[0] == 0:
+            continue
+        # compute relevant quantities
+        n_nodes = estimator.tree_.node_count
+        children_left = estimator.tree_.children_left
+        children_right = estimator.tree_.children_right
+        feature = estimator.tree_.feature
+        node_depth = np.zeros(shape=n_nodes, dtype=np.int64)
+        is_leaves = np.zeros(shape=n_nodes, dtype=bool)
+        # compute node depths
+        stack = [(0, -1)]  
+        while len(stack) > 0:
+            node_id, parent_depth = stack.pop()
+            node_depth[node_id] = parent_depth + 1
+            # if we have a test node
+            if (children_left[node_id] != children_right[node_id]):
+                stack.append((children_left[node_id], parent_depth + 1))
+                stack.append((children_right[node_id], parent_depth + 1))
+            else:
+                is_leaves[node_id] = True
+        # OUTLIERS
+        # compute IICs for outliers
+        lambda_outliers_ib = _get_iic(estimator, X_outliers_ib, is_leaves, adjust_iic)
+        # update cfi and counter for outliers
+        node_indicator_all_points_outliers_ib = estimator.decision_path(X_outliers_ib)
+        node_indicator_all_points_array_outliers_ib = node_indicator_all_points_outliers_ib.toarray()
+        # for every point judged as abnormal
+        for i in range(len(X_outliers_ib)):
+            path = list(np.where(node_indicator_all_points_array_outliers_ib[i] == 1)[0])
+            depth = node_depth[path[-1]]
+            for node in path:
+                current_feature = feature[node]
+                if lambda_outliers_ib[node] == -1:
+                    continue
+                else:
+                    cfi_outliers_ib[current_feature] += (1 / depth) * lambda_outliers_ib[node]
+                    counter_outliers_ib[current_feature] += 1
+        # compute partial FI for outliers, for the current tree
+        print("cfi_outliers_ib:", cfi_outliers_ib)
+        print("counter_outliers_ib:", counter_outliers_ib)
+        partial_fi_outliers_ib = np.where(counter_outliers_ib > 0, cfi_outliers_ib / counter_outliers_ib, 0)
+        fi_outliers_ib_per_tree.append(partial_fi_outliers_ib)
+        # INLIERS
+        # compute IICs for inliers 
+        lambda_inliers_ib = _get_iic(estimator, X_inliers_ib, is_leaves, adjust_iic)
+        # update cfi and counter for inliers
+        node_indicator_all_points_inliers_ib = estimator.decision_path(X_inliers_ib)
+        node_indicator_all_points_array_inliers_ib = node_indicator_all_points_inliers_ib.toarray()
+        # for every point judged as normal
+        for i in range(len(X_inliers_ib)):
+            path = list(np.where(node_indicator_all_points_array_inliers_ib[i] == 1)[0])
+            depth = node_depth[path[-1]]
+            for node in path:
+                current_feature = feature[node]
+                if lambda_inliers_ib[node] == -1:
+                    continue
+                else:
+                    cfi_inliers_ib[current_feature] += (1 / depth) * lambda_inliers_ib[node]
+                    counter_inliers_ib[current_feature] += 1
+    # compute partial FI for inliers, for the current tree
+    print("cfi_inliers_ib:", cfi_inliers_ib)
+    print("counter_inliers_ib:", counter_inliers_ib)
+    partial_fi_inliers_ib = np.where(counter_inliers_ib > 0, cfi_inliers_ib / counter_inliers_ib, 0)
+    fi_inliers_ib_per_tree.append(partial_fi_inliers_ib)
+    # compute FI
+    fi_outliers_ib = np.where(counter_outliers_ib > 0, cfi_outliers_ib / counter_outliers_ib, 0)
+    fi_inliers_ib = np.where(counter_inliers_ib > 0, cfi_inliers_ib / counter_inliers_ib, 0)
+    fi_ib = fi_outliers_ib / fi_inliers_ib
+    end = time.time()
+    exec_time = end - start
+    return fi_ib, exec_time, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree

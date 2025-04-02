@@ -179,3 +179,32 @@ def fs_datasets_hyperparams(dataset):
             ('satellite'): {'contamination': 0.15, 'max_samples': 64, 'n_estimators': 150}
             }
     return data[dataset]
+
+def diffi_ranks_tmp(X, y, n_trees, max_samples, n_iter, contamination: float | str = 'auto'):
+    f1_all, fi_diffi_all, features_per_forest, iforests, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = [], [], [], [], [], []
+    for k in range(n_iter):
+        # ISOLATION FOREST
+        # fit the model
+        iforest = IsolationForest(n_estimators=n_trees, max_samples=max_samples, 
+                                  contamination=contamination, random_state=k)
+        iforest.fit(X)
+        # get estimators
+        iforests.append(iforest)
+        # get predictions
+        y_pred = np.array(iforest.decision_function(X) < 0).astype('int')   # > 0 -> True -> 1; < 0 -> False -> 0 
+        # get performance metrics
+        f1_all.append(f1_score(y, y_pred))
+        # diffi
+        fi_diffi, _, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = interp.diffi_ib_tmp(iforest, X, adjust_iic=True)
+        fi_diffi_all.append(fi_diffi)
+        # get features per forest
+        features_per_forest.append([tree.tree_.feature for _, tree in enumerate(iforest.estimators_)])
+    # compute avg F1 
+    avg_f1 = np.mean(f1_all)
+    # compute the scores
+    fi_diffi_all = np.vstack(fi_diffi_all)
+    fi_diffi_means = np.mean(fi_diffi_all, axis=0)
+    fi_diffi_std = np.std(fi_diffi_all, axis=0)
+    scores = logarithmic_scores(fi_diffi_all)
+    sorted_idx = np.flip(np.argsort(scores))
+    return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, iforests, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree
