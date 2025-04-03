@@ -232,9 +232,15 @@ def diffi_ib_tmp(iforest, X, adjust_iic=True): # "ib" stands for "in-bag"
                     cfi_outliers_ib[current_feature] += (1 / depth) * lambda_outliers_ib[node]
                     counter_outliers_ib[current_feature] += 1
         # compute partial FI for outliers, for the current tree
-        print("cfi_outliers_ib:", cfi_outliers_ib)
-        print("counter_outliers_ib:", counter_outliers_ib)
-        partial_fi_outliers_ib = np.where(counter_outliers_ib > 0, cfi_outliers_ib / counter_outliers_ib, 0)
+        # print("cfi_outliers_ib:", cfi_outliers_ib)
+        # print("counter_outliers_ib:", counter_outliers_ib)
+        # partial_fi_outliers_ib = np.where(counter_outliers_ib > 0, cfi_outliers_ib / counter_outliers_ib, 0)
+        partial_fi_outliers_ib = np.divide(
+            cfi_outliers_ib, 
+            counter_outliers_ib, 
+            out=np.zeros_like(cfi_outliers_ib),  # Replace invalid divisions with 0
+            where=counter_outliers_ib > 0       # Only divide where counter_outliers_ib > 0
+        )
         fi_outliers_ib_per_tree.append(partial_fi_outliers_ib)
         # INLIERS
         # compute IICs for inliers 
@@ -253,11 +259,17 @@ def diffi_ib_tmp(iforest, X, adjust_iic=True): # "ib" stands for "in-bag"
                 else:
                     cfi_inliers_ib[current_feature] += (1 / depth) * lambda_inliers_ib[node]
                     counter_inliers_ib[current_feature] += 1
-    # compute partial FI for inliers, for the current tree
-    print("cfi_inliers_ib:", cfi_inliers_ib)
-    print("counter_inliers_ib:", counter_inliers_ib)
-    partial_fi_inliers_ib = np.where(counter_inliers_ib > 0, cfi_inliers_ib / counter_inliers_ib, 0)
-    fi_inliers_ib_per_tree.append(partial_fi_inliers_ib)
+        # compute partial FI for inliers, for the current tree
+        # print("cfi_inliers_ib:", cfi_inliers_ib)
+        # print("counter_inliers_ib:", counter_inliers_ib)
+        # partial_fi_inliers_ib = np.where(counter_inliers_ib > 0, cfi_inliers_ib / counter_inliers_ib, 0)
+        partial_fi_inliers_ib = np.divide(
+            cfi_inliers_ib, 
+            counter_inliers_ib, 
+            out=np.zeros_like(cfi_inliers_ib),  # Replace invalid divisions with 0
+            where=counter_inliers_ib > 0       # Only divide where counter_inliers_ib > 0
+        )
+        fi_inliers_ib_per_tree.append(partial_fi_inliers_ib)
     # compute FI
     fi_outliers_ib = np.where(counter_outliers_ib > 0, cfi_outliers_ib / counter_outliers_ib, 0)
     fi_inliers_ib = np.where(counter_inliers_ib > 0, cfi_inliers_ib / counter_inliers_ib, 0)

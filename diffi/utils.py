@@ -182,6 +182,7 @@ def fs_datasets_hyperparams(dataset):
 
 def diffi_ranks_tmp(X, y, n_trees, max_samples, n_iter, contamination: float | str = 'auto'):
     f1_all, fi_diffi_all, features_per_forest, iforests, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = [], [], [], [], [], []
+    fi_diffi_inliers, fi_diffi_outliers = np.zeros((n_iter, n_trees, X.shape[1])), np.zeros((n_iter, n_trees, X.shape[1]))
     for k in range(n_iter):
         # ISOLATION FOREST
         # fit the model
@@ -196,6 +197,8 @@ def diffi_ranks_tmp(X, y, n_trees, max_samples, n_iter, contamination: float | s
         f1_all.append(f1_score(y, y_pred))
         # diffi
         fi_diffi, _, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = interp.diffi_ib_tmp(iforest, X, adjust_iic=True)
+        fi_diffi_inliers[k] = fi_inliers_ib_per_tree
+        fi_diffi_outliers[k] = fi_outliers_ib_per_tree
         fi_diffi_all.append(fi_diffi)
         # get features per forest
         features_per_forest.append([tree.tree_.feature for _, tree in enumerate(iforest.estimators_)])
@@ -207,4 +210,4 @@ def diffi_ranks_tmp(X, y, n_trees, max_samples, n_iter, contamination: float | s
     fi_diffi_std = np.std(fi_diffi_all, axis=0)
     scores = logarithmic_scores(fi_diffi_all)
     sorted_idx = np.flip(np.argsort(scores))
-    return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, iforests, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree
+    return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, iforests, fi_diffi_inliers, fi_diffi_outliers
