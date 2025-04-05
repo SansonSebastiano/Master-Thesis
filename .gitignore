@@ -58,3 +58,20 @@ coverage.xml
 .vscode/
 *.swp
 *.swo
+
+# ignore wandb files
+wandb/
+# ignore logs
+logs/
+# ignore datasets
+datasets/
+# ignore checkpoints
+checkpoints/
+# ignore config files
+configs/
+# ignore output files
+outputs/
+# ignore temp files
+temp/
+# ignore cache files
+cache/
