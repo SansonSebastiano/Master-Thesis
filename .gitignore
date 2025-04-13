@@ -75,3 +75,6 @@ outputs/
 temp/
 # ignore cache files
 cache/
+
+# ignore odds dataset
+odds_dataset/

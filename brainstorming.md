@@ -1,0 +1,2 @@
+1. È possibile adattare DIFFI su Extended Isolation Forest?
+2. Potrebbe essere utile considerare più valori di threshold: non un unico valore globale, per tutti gli isolation forest del modello, ma uno per ogni foresta del modello?

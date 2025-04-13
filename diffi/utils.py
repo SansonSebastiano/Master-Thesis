@@ -180,14 +180,14 @@ def fs_datasets_hyperparams(dataset):
             }
     return data[dataset]
 
-def diffi_ranks_per_tree(X, y, n_trees, max_samples, n_iter, contamination: float | str = 'auto'):
+def diffi_ranks_per_tree(X, y, n_trees, max_samples, n_iter, seed, contamination: float | str = 'auto'):
     f1_all, fi_diffi_all, features_per_forest, iforests, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = [], [], [], [], [], []
     fi_diffi_inliers, fi_diffi_outliers = np.zeros((n_iter, n_trees, X.shape[1])), np.zeros((n_iter, n_trees, X.shape[1]))
     for k in range(n_iter):
         # ISOLATION FOREST
         # fit the model
         iforest = IsolationForest(n_estimators=n_trees, max_samples=max_samples, 
-                                  contamination=contamination, random_state=k)
+                                  contamination=contamination, random_state=seed)
         iforest.fit(X)
         # get estimators
         iforests.append(iforest)
