@@ -76,5 +76,5 @@ temp/
 # ignore cache files
 cache/
 
-# ignore odds dataset
-odds_dataset/
+# ignore odds_datesets folder
+odds_datasets/
