@@ -173,7 +173,7 @@ def _get_iic(estimator, predictions, is_leaves, adjust_iic):
     return lambda_
 
 
-def diffi_ib_tmp(iforest, X, adjust_iic=True): # "ib" stands for "in-bag"
+def diffi_ib_per_tree(iforest, X, adjust_iic=True): # "ib" stands for "in-bag"
     fi_inliers_ib_per_tree, fi_outliers_ib_per_tree = [], []
     # start time
     start = time.time()
