@@ -197,8 +197,10 @@ def diffi_ranks_per_tree(X, y, n_trees, max_samples, n_iter, seed, contamination
         f1_all.append(f1_score(y, y_pred))
         # diffi
         fi_diffi, _, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = interp.diffi_ib_per_tree(iforest, X, adjust_iic=True)
-        print('fi_outliers_ib_per_tree', np.array(fi_outliers_ib_per_tree, dtype=object).shape)
-        print('fi_inliers_ib_per_tree', np.array(fi_inliers_ib_per_tree, dtype=object).shape)
+        
+        # print('fi_outliers_ib_per_tree', np.array(fi_outliers_ib_per_tree, dtype=object).shape)
+        # print('fi_inliers_ib_per_tree', np.array(fi_inliers_ib_per_tree, dtype=object).shape)
+
         fi_diffi_inliers[k] = fi_inliers_ib_per_tree
         fi_diffi_outliers[k] = fi_outliers_ib_per_tree
         fi_diffi_all.append(fi_diffi)
@@ -226,8 +228,8 @@ def diffi_ranks_evaluation_only(X, y, iforest):
         # diffi
         fi_diffi, _, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = interp.diffi_ib_per_tree(forest, X, adjust_iic=True)
     
-        print('fi_outliers_ib_per_tree', np.array(fi_outliers_ib_per_tree, dtype=object).shape)
-        print('fi_inliers_ib_per_tree', np.array(fi_inliers_ib_per_tree, dtype=object).shape)
+        # print('fi_outliers_ib_per_tree', np.array(fi_outliers_ib_per_tree, dtype=object).shape)
+        # print('fi_inliers_ib_per_tree', np.array(fi_inliers_ib_per_tree, dtype=object).shape)
 
         fi_diffi_inliers.append(fi_inliers_ib_per_tree)
         fi_diffi_outliers.append(fi_outliers_ib_per_tree)
