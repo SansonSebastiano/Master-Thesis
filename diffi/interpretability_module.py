@@ -238,9 +238,9 @@ def diffi_ib_per_tree(iforest, X, adjust_iic=True): # "ib" stands for "in-bag"
         partial_fi_outliers_ib = np.divide(
             cfi_outliers_ib, 
             counter_outliers_ib, 
-            out=np.zeros_like(cfi_outliers_ib),  # Replace invalid divisions with 0
             where=counter_outliers_ib > 0       # Only divide where counter_outliers_ib > 0
         )
+        partial_fi_outliers_ib[counter_outliers_ib == 0] = 0  # Set to 0 where division is invalid
         fi_outliers_ib_per_tree.append(partial_fi_outliers_ib)
         # INLIERS
         # compute IICs for inliers 
@@ -266,14 +266,23 @@ def diffi_ib_per_tree(iforest, X, adjust_iic=True): # "ib" stands for "in-bag"
         partial_fi_inliers_ib = np.divide(
             cfi_inliers_ib, 
             counter_inliers_ib, 
-            out=np.zeros_like(cfi_inliers_ib),  # Replace invalid divisions with 0
             where=counter_inliers_ib > 0       # Only divide where counter_inliers_ib > 0
         )
+        partial_fi_inliers_ib[counter_inliers_ib == 0] = 0  # Set to 0 where division is invalid
         fi_inliers_ib_per_tree.append(partial_fi_inliers_ib)
     # compute FI
-    fi_outliers_ib = np.where(counter_outliers_ib > 0, cfi_outliers_ib / counter_outliers_ib, 0)
-    fi_inliers_ib = np.where(counter_inliers_ib > 0, cfi_inliers_ib / counter_inliers_ib, 0)
-    fi_ib = fi_outliers_ib / fi_inliers_ib
+    # Safely divide cfi_outliers_ib by counter_outliers_ib
+    fi_outliers_ib = np.divide(cfi_outliers_ib, counter_outliers_ib, where=counter_outliers_ib > 0)
+    fi_outliers_ib[counter_outliers_ib == 0] = 0  # Set to 0 where division is invalid
+
+    # Safely divide cfi_inliers_ib by counter_inliers_ib
+    fi_inliers_ib = np.divide(cfi_inliers_ib, counter_inliers_ib, where=counter_inliers_ib > 0)
+    fi_inliers_ib[counter_inliers_ib == 0] = 0  # Set to 0 where division is invalid
+
+    # Safely divide fi_outliers_ib by fi_inliers_ib
+    fi_ib = np.divide(fi_outliers_ib, fi_inliers_ib, where=fi_inliers_ib > 0)
+    fi_ib[fi_inliers_ib == 0] = 0  # Set to 0 where division is invalid
+    
     end = time.time()
     exec_time = end - start
     return fi_ib, exec_time, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree
