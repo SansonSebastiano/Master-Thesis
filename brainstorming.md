@@ -3,4 +3,6 @@
 3. average usage per isolation tree o per isolation forest o per l'intero modello (granularità)?
 
 -> capire quali potrebbero essere le feature significative: osservare le heatmap
-    -> strategia per selezionarle
+    -> strategia per selezionarle?
+
+-> non mi é chiaro perchè dovrei usare `np.percentile`  su `avg_usage_per_forest`

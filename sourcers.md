@@ -1,0 +1,10 @@
+- https://www.speedcurve.com/web-performance-guide/averages-medians-percentiles/
+- numpy
+- sklearn
+    - isolation forest
+    - ...
+- wandb
+- papers
+- https://christophm.github.io/interpretable-ml-book/
+- https://github.com/mattiacarletti/DIFFI/tree/master
+- https://paperswithcode.com/dataset/odds
