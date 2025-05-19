@@ -7,9 +7,8 @@
 
 POSSIBILITA' DI SCARTARE
 1) avg usage (score totale) < threshold [percentile] -> si potrebbero provare valori differenti di percentile per valutare quale sia il migliore?
-2) teniamo le feature separate e togliamo gli alberi per cui almeno un feature usage è sotto alla threshold
-3) e togliere gli alberi per cui TUTTE le feature utili sono sotto una threshold? come definire la treshold?
+2) teniamo le feature separate e togliamo gli alberi "maggioranza" (majority voting) in base alla media pesata 
 
 ATTUALI MODALITÀ DI SCARTO
 1. Percentile
-2. 
+2. Media (su wandb nominato come "auto")
