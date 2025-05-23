@@ -12,3 +12,5 @@ POSSIBILITA' DI SCARTARE
 ATTUALI MODALITÀ DI SCARTO
 1. Percentile
 2. Media (su wandb nominato come "auto")
+
+
