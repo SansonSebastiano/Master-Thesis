@@ -8,3 +8,10 @@
 - https://christophm.github.io/interpretable-ml-book/
 - https://github.com/mattiacarletti/DIFFI/tree/master
 - https://paperswithcode.com/dataset/odds
+- https://en.wikipedia.org/wiki/Summary_statistics
+    - https://en.wikipedia.org/wiki/Central_tendency
+        - https://en.wikipedia.org/wiki/Aggregate_function
+            - https://en.wikipedia.org/wiki/Weighted_arithmetic_mean
+            - https://en.wikipedia.org/wiki/Percentile#Weighted_percentile
+                - https://en.wikipedia.org/wiki/Weighted_median
+    - https://en.wikipedia.org/wiki/Statistical_dispersion

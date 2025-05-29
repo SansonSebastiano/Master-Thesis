@@ -181,6 +181,28 @@ def fs_datasets_hyperparams(dataset):
     return data[dataset]
 
 def diffi_ranks_per_tree(X, y, n_trees, max_samples, n_iter, seed, contamination: float | str = 'auto'):
+    """
+    Computes the diffi ranks for each tree in the Isolation Forest.
+    Args:
+        X (np.ndarray): The input data.
+        y (np.ndarray): The labels.
+        n_trees (int): The number of trees in the Isolation Forest.
+        max_samples (int): The maximum number of samples to draw from X to train each base estimator.
+        n_iter (int): The number of iterations to run the Isolation Forest.
+        seed (int): The random seed for reproducibility.
+        contamination (float | str): The amount of contamination in the data. If 'auto', it will be set to the default value.
+    Returns:
+        sorted_idx (np.ndarray): The indices of the features sorted by their diffi scores.
+        avg_f1 (float): The average F1 score across all iterations.
+        fi_diffi_means (np.ndarray): The mean diffi scores for each feature.
+        fi_diffi_std (np.ndarray): The standard deviation of the diffi scores for each feature.
+        features_per_forest (list): A list of lists, where each inner list, for each forest, contains the features used in each tree.
+        fi_diffi_all (np.ndarray): The diffi scores for each feature across all iterations.
+        iforests (list): A list of Isolation Forest models trained in each iteration.
+        fi_diffi_inliers (np.ndarray): The diffi scores for inliers across all iterations and trees.
+        fi_diffi_outliers (np.ndarray): The diffi scores for outliers across all iterations and trees.
+    """
+
     f1_all, fi_diffi_all, features_per_forest, iforests, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = [], [], [], [], [], []
     fi_diffi_inliers, fi_diffi_outliers = np.zeros((n_iter, n_trees, X.shape[1])), np.zeros((n_iter, n_trees, X.shape[1]))  # shape: (n_iter, n_trees, n_features)
     for k in range(n_iter):
