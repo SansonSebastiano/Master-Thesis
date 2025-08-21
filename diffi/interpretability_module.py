@@ -232,9 +232,6 @@ def diffi_ib_per_tree(iforest, X, adjust_iic=True): # "ib" stands for "in-bag"
                     cfi_outliers_ib[current_feature] += (1 / depth) * lambda_outliers_ib[node]
                     counter_outliers_ib[current_feature] += 1
         # compute partial FI for outliers, for the current tree
-        # print("cfi_outliers_ib:", cfi_outliers_ib)
-        # print("counter_outliers_ib:", counter_outliers_ib)
-        # partial_fi_outliers_ib = np.where(counter_outliers_ib > 0, cfi_outliers_ib / counter_outliers_ib, 0)
         partial_fi_outliers_ib = np.divide(
             cfi_outliers_ib, 
             counter_outliers_ib, 
@@ -260,9 +257,6 @@ def diffi_ib_per_tree(iforest, X, adjust_iic=True): # "ib" stands for "in-bag"
                     cfi_inliers_ib[current_feature] += (1 / depth) * lambda_inliers_ib[node]
                     counter_inliers_ib[current_feature] += 1
         # compute partial FI for inliers, for the current tree
-        # print("cfi_inliers_ib:", cfi_inliers_ib)
-        # print("counter_inliers_ib:", counter_inliers_ib)
-        # partial_fi_inliers_ib = np.where(counter_inliers_ib > 0, cfi_inliers_ib / counter_inliers_ib, 0)
         partial_fi_inliers_ib = np.divide(
             cfi_inliers_ib, 
             counter_inliers_ib, 

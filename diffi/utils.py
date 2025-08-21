@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.utils import shuffle
 from sklearn.ensemble import IsolationForest
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, average_precision_score
 import shap
 from . import interpretability_module as interp
 
@@ -133,34 +133,78 @@ def get_fs_dataset(dataset_id, seed):
     return X, y, contamination  
 
 
-def diffi_ranks(X, y, n_trees, max_samples, n_iter, contamination: float | str = 'auto'):
-    f1_all, fi_diffi_all, features_per_forest, iforests = [], [], [], []
-    for k in range(n_iter):
-        # ISOLATION FOREST
-        # fit the model
-        iforest = IsolationForest(n_estimators=n_trees, max_samples=max_samples, 
-                                  contamination=contamination, random_state=k)
-        iforest.fit(X)
-        # get estimators
-        iforests.append(iforest)
-        # get predictions
-        y_pred = np.array(iforest.decision_function(X) < 0).astype('int')   # > 0 -> True -> 1; < 0 -> False -> 0 
-        # get performance metrics
-        f1_all.append(f1_score(y, y_pred))
-        # diffi
-        fi_diffi, _ = interp.diffi_ib(iforest, X, adjust_iic=True)
-        fi_diffi_all.append(fi_diffi)
-        # get features per forest
-        features_per_forest.append([tree.tree_.feature for _, tree in enumerate(iforest.estimators_)])
-    # compute avg F1 
-    avg_f1 = np.mean(f1_all)
-    # compute the scores
-    fi_diffi_all = np.vstack(fi_diffi_all)
-    fi_diffi_means = np.mean(fi_diffi_all, axis=0)
-    fi_diffi_std = np.std(fi_diffi_all, axis=0)
-    scores = logarithmic_scores(fi_diffi_all)
-    sorted_idx = np.flip(np.argsort(scores))
-    return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, iforests
+# def diffi_ranks(X, y, n_trees, max_samples, n_iter, contamination: float | str = 'auto'):
+#     f1_all, fi_diffi_all, features_per_forest, iforests = [], [], [], []
+#     for k in range(n_iter):
+#         # ISOLATION FOREST
+#         # fit the model
+#         iforest = IsolationForest(n_estimators=n_trees, max_samples=max_samples, 
+#                                   contamination=contamination, random_state=k)
+#         iforest.fit(X)
+#         # get estimators
+#         iforests.append(iforest)
+#         # get predictions
+#         y_pred = np.array(iforest.decision_function(X) < 0).astype('int')   # > 0 -> True -> 1; < 0 -> False -> 0 
+#         # get performance metrics
+#         f1_all.append(f1_score(y, y_pred))
+#         # diffi
+#         fi_diffi, _ = interp.diffi_ib(iforest, X, adjust_iic=True)
+#         fi_diffi_all.append(fi_diffi)
+#         # get features per forest
+#         features_per_forest.append([tree.tree_.feature for _, tree in enumerate(iforest.estimators_)])
+#     # compute avg F1 
+#     avg_f1 = np.mean(f1_all)
+#     # compute the scores
+#     fi_diffi_all = np.vstack(fi_diffi_all)
+#     fi_diffi_means = np.mean(fi_diffi_all, axis=0)
+#     fi_diffi_std = np.std(fi_diffi_all, axis=0)
+#     scores = logarithmic_scores(fi_diffi_all)
+#     sorted_idx = np.flip(np.argsort(scores))
+#     return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, iforests
+
+def diffi_ranks(X_train, X_test, y_test, seed, n_iters, contamination: float | str = 'auto', num_trees=100, max_samples=256): 
+    
+    models = []
+    used_features = []
+    f1s, avps = [], []
+    fis, fis_out, fis_in = [], [], []
+
+    for k in range(n_iters): 
+
+        iforest = IsolationForest(n_estimators=num_trees, max_samples=max_samples, 
+                                  contamination=contamination, random_state = seed + k) 
+        
+        iforest.fit(X_train) 
+
+        # lo stesso vale per gli anomaly scores, vanno tra -1 e 1 (-1=inlier) ma li vogliamo 
+        # tra 0 e 1 dove 1 = anomalous
+
+        # -1 for anomalies, 1 for inliers are returned
+        y_pred = iforest.predict(X_test)
+        # mapping: -1 -> 1 (anomalies), 1 -> 0 (inliers)
+        # the true labels are 0 for inliers and 1 for anomalies
+        y_pred = np.where(y_pred == -1, 1, 0)
+        anomaly_scores = 0.5 *(-iforest.decision_function(X_test) + 1) 
+
+        # compute performance metrics
+        f1 = f1_score(y_test, y_pred)
+        avg_precision = average_precision_score(y_test, anomaly_scores)
+
+        # compute feature importance
+        fi, _, fi_outliers_per_tree, fi_inliers_per_tree = interp.diffi_ib_per_tree(iforest, X_train)
+        # fi_outliers_per_tree è una lista con num_trees elementi. Ogni elemento
+        # ha 13 feature importance, una per ogni feature
+
+        models.append(iforest)
+        used_features.append([tree.tree_.feature for tree in iforest.estimators_])
+
+        f1s.append(f1)
+        avps.append(avg_precision)
+        fis.append(fi)
+        fis_out.append(fi_outliers_per_tree)
+        fis_in.append(fi_inliers_per_tree)
+
+    return np.asarray(f1s), np.asarray(avps), np.asarray(fis), models, used_features, fis_out, fis_in
 
 
 def fs_datasets_hyperparams(dataset):
@@ -180,97 +224,120 @@ def fs_datasets_hyperparams(dataset):
             }
     return data[dataset]
 
-def diffi_ranks_per_tree(X, y, n_trees, max_samples, n_iter, seed, contamination: float | str = 'auto'):
-    """
-    Computes the diffi ranks for each tree in the Isolation Forest.
-    Args:
-        X (np.ndarray): The input data.
-        y (np.ndarray): The labels.
-        n_trees (int): The number of trees in the Isolation Forest.
-        max_samples (int): The maximum number of samples to draw from X to train each base estimator.
-        n_iter (int): The number of iterations to run the Isolation Forest.
-        seed (int): The random seed for reproducibility.
-        contamination (float | str): The amount of contamination in the data. If 'auto', it will be set to the default value.
-    Returns:
-        sorted_idx (np.ndarray): The indices of the features sorted by their diffi scores.
-        avg_f1 (float): The average F1 score across all iterations.
-        fi_diffi_means (np.ndarray): The mean diffi scores for each feature.
-        fi_diffi_std (np.ndarray): The standard deviation of the diffi scores for each feature.
-        features_per_forest (list): A list of lists, where each inner list, for each forest, contains the features used in each tree.
-        fi_diffi_all (np.ndarray): The diffi scores for each feature across all iterations.
-        iforests (list): A list of Isolation Forest models trained in each iteration.
-        fi_diffi_inliers (np.ndarray): The diffi scores for inliers across all iterations and trees.
-        fi_diffi_outliers (np.ndarray): The diffi scores for outliers across all iterations and trees.
-    """
+# def diffi_ranks_per_tree(X, y, n_trees, max_samples, n_iter, seed, contamination: float | str = 'auto'):
+#     """
+#     Computes the diffi ranks for each tree in the Isolation Forest.
+#     Args:
+#         X (np.ndarray): The input data.
+#         y (np.ndarray): The labels.
+#         n_trees (int): The number of trees in the Isolation Forest.
+#         max_samples (int): The maximum number of samples to draw from X to train each base estimator.
+#         n_iter (int): The number of iterations to run the Isolation Forest.
+#         seed (int): The random seed for reproducibility.
+#         contamination (float | str): The amount of contamination in the data. If 'auto', it will be set to the default value.
+#     Returns:
+#         sorted_idx (np.ndarray): The indices of the features sorted by their diffi scores.
+#         avg_f1 (float): The average F1 score across all iterations.
+#         fi_diffi_means (np.ndarray): The mean diffi scores for each feature.
+#         fi_diffi_std (np.ndarray): The standard deviation of the diffi scores for each feature.
+#         features_per_forest (list): A list of lists, where each inner list, for each forest, contains the features used in each tree.
+#         fi_diffi_all (np.ndarray): The diffi scores for each feature across all iterations.
+#         iforests (list): A list of Isolation Forest models trained in each iteration.
+#         fi_diffi_inliers (np.ndarray): The diffi scores for inliers across all iterations and trees.
+#         fi_diffi_outliers (np.ndarray): The diffi scores for outliers across all iterations and trees.
+#     """
 
-    f1_all, fi_diffi_all, features_per_forest, iforests, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = [], [], [], [], [], []
-    fi_diffi_inliers, fi_diffi_outliers = np.zeros((n_iter, n_trees, X.shape[1])), np.zeros((n_iter, n_trees, X.shape[1]))  # shape: (n_iter, n_trees, n_features)
-    for k in range(n_iter):
-        # ISOLATION FOREST
-        # fit the model
-        iforest = IsolationForest(n_estimators=n_trees, max_samples=max_samples, 
-                                  contamination=contamination, random_state=seed+k)
-        iforest.fit(X)
-        # get estimators
-        iforests.append(iforest)
-        # get predictions
-        y_pred = np.array(iforest.decision_function(X) < 0).astype('int')   # > 0 -> True -> 1; < 0 -> False -> 0 
-        # get performance metrics
-        f1_all.append(f1_score(y, y_pred))
-        # diffi
-        fi_diffi, _, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = interp.diffi_ib_per_tree(iforest, X, adjust_iic=True)
+#     f1_all, fi_diffi_all, features_per_forest, iforests, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = [], [], [], [], [], []
+#     fi_diffi_inliers, fi_diffi_outliers = np.zeros((n_iter, n_trees, X.shape[1])), np.zeros((n_iter, n_trees, X.shape[1]))  # shape: (n_iter, n_trees, n_features)
+#     for k in range(n_iter):
+#         # ISOLATION FOREST
+#         # fit the model
+#         iforest = IsolationForest(n_estimators=n_trees, max_samples=max_samples, 
+#                                   contamination=contamination, random_state=seed+k)
+#         iforest.fit(X)
+#         # get estimators
+#         iforests.append(iforest)
+#         # get predictions
+#         y_pred = np.array(iforest.decision_function(X) < 0).astype('int')   # > 0 -> True -> 1; < 0 -> False -> 0 
+#         # get performance metrics
+#         f1_all.append(f1_score(y, y_pred))
+#         # diffi
+#         fi_diffi, _, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = interp.diffi_ib_per_tree(iforest, X, adjust_iic=True)
         
-        # print('fi_outliers_ib_per_tree', np.array(fi_outliers_ib_per_tree, dtype=object).shape)
-        # print('fi_inliers_ib_per_tree', np.array(fi_inliers_ib_per_tree, dtype=object).shape)
+#         # print('fi_outliers_ib_per_tree', np.array(fi_outliers_ib_per_tree, dtype=object).shape)
+#         # print('fi_inliers_ib_per_tree', np.array(fi_inliers_ib_per_tree, dtype=object).shape)
 
-        fi_diffi_inliers[k] = fi_inliers_ib_per_tree
-        fi_diffi_outliers[k] = fi_outliers_ib_per_tree
-        fi_diffi_all.append(fi_diffi)
-        # get features per forest
-        features_per_forest.append([tree.tree_.feature for _, tree in enumerate(iforest.estimators_)])
-    # compute avg F1 
-    avg_f1 = np.mean(f1_all)
-    # compute the scores
-    fi_diffi_all = np.vstack(fi_diffi_all)
-    fi_diffi_means = np.mean(fi_diffi_all, axis=0)
-    fi_diffi_std = np.std(fi_diffi_all, axis=0)
-    scores = logarithmic_scores(fi_diffi_all)
-    sorted_idx = np.flip(np.argsort(scores))
-    return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, iforests, fi_diffi_inliers, fi_diffi_outliers
+#         fi_diffi_inliers[k] = fi_inliers_ib_per_tree
+#         fi_diffi_outliers[k] = fi_outliers_ib_per_tree
+#         fi_diffi_all.append(fi_diffi)
+#         # get features per forest
+#         features_per_forest.append([tree.tree_.feature for _, tree in enumerate(iforest.estimators_)])
+#     # compute avg F1 
+#     avg_f1 = np.mean(f1_all)
+#     # compute the scores
+#     fi_diffi_all = np.vstack(fi_diffi_all)
+#     fi_diffi_means = np.mean(fi_diffi_all, axis=0)
+#     fi_diffi_std = np.std(fi_diffi_all, axis=0)
+#     scores = logarithmic_scores(fi_diffi_all)
+#     sorted_idx = np.flip(np.argsort(scores))
+#     return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, iforests, fi_diffi_inliers, fi_diffi_outliers
 
-def diffi_ranks_evaluation_only(X, y, iforest):
-    f1_all, fi_diffi_all, features_per_forest, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = [], [], [], [], []
-    fi_diffi_inliers, fi_diffi_outliers = [], []
+# def diffi_ranks_evaluation_only(X, y, iforest):
+#     f1_all, fi_diffi_all, features_per_forest, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = [], [], [], [], []
+#     fi_diffi_inliers, fi_diffi_outliers = [], []
 
-    for i, forest in enumerate(iforest):
-        # get predictions
-        y_pred = np.array(forest.decision_function(X) < 0).astype('int')   # > 0 -> True -> 1; < 0 -> False -> 0 
-        # get performance metrics
-        f1_all.append(f1_score(y, y_pred))
-        # diffi
-        fi_diffi, _, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = interp.diffi_ib_per_tree(forest, X, adjust_iic=True)
+#     for i, forest in enumerate(iforest):
+#         # get predictions
+#         y_pred = np.array(forest.decision_function(X) < 0).astype('int')   # > 0 -> True -> 1; < 0 -> False -> 0 
+#         # get performance metrics
+#         f1_all.append(f1_score(y, y_pred))
+#         # diffi
+#         fi_diffi, _, fi_outliers_ib_per_tree, fi_inliers_ib_per_tree = interp.diffi_ib_per_tree(forest, X, adjust_iic=True)
     
-        # print('fi_outliers_ib_per_tree', np.array(fi_outliers_ib_per_tree, dtype=object).shape)
-        # print('fi_inliers_ib_per_tree', np.array(fi_inliers_ib_per_tree, dtype=object).shape)
+#         # print('fi_outliers_ib_per_tree', np.array(fi_outliers_ib_per_tree, dtype=object).shape)
+#         # print('fi_inliers_ib_per_tree', np.array(fi_inliers_ib_per_tree, dtype=object).shape)
 
-        fi_diffi_inliers.append(fi_inliers_ib_per_tree)
-        fi_diffi_outliers.append(fi_outliers_ib_per_tree)
-        fi_diffi_all.append(fi_diffi)
-        # get features per forest
-        features_per_forest.append([tree.tree_.feature for _, tree in enumerate(forest.estimators_)])
-    # compute avg F1 
-    avg_f1 = np.mean(f1_all)
-    # compute the scores
-    fi_diffi_all = np.vstack(fi_diffi_all)
-    fi_diffi_means = np.mean(fi_diffi_all, axis=0)
-    fi_diffi_std = np.std(fi_diffi_all, axis=0)
-    scores = logarithmic_scores(fi_diffi_all)
-    sorted_idx = np.flip(np.argsort(scores))
+#         fi_diffi_inliers.append(fi_inliers_ib_per_tree)
+#         fi_diffi_outliers.append(fi_outliers_ib_per_tree)
+#         fi_diffi_all.append(fi_diffi)
+#         # get features per forest
+#         features_per_forest.append([tree.tree_.feature for _, tree in enumerate(forest.estimators_)])
+#     # compute avg F1 
+#     avg_f1 = np.mean(f1_all)
+#     # compute the scores
+#     fi_diffi_all = np.vstack(fi_diffi_all)
+#     fi_diffi_means = np.mean(fi_diffi_all, axis=0)
+#     fi_diffi_std = np.std(fi_diffi_all, axis=0)
+#     scores = logarithmic_scores(fi_diffi_all)
+#     sorted_idx = np.flip(np.argsort(scores))
 
-    fi_diffi_inliers = np.array(fi_diffi_inliers, dtype=object)
-    fi_diffi_outliers = np.array(fi_diffi_outliers, dtype=object)
+#     fi_diffi_inliers = np.array(fi_diffi_inliers, dtype=object)
+#     fi_diffi_outliers = np.array(fi_diffi_outliers, dtype=object)
 
-    print('fi_diffi_inliers shape:', fi_diffi_inliers.shape)
-    print('fi_diffi_outliers shape:', fi_diffi_outliers.shape)
+#     print('fi_diffi_inliers shape:', fi_diffi_inliers.shape)
+#     print('fi_diffi_outliers shape:', fi_diffi_outliers.shape)
 
-    return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, fi_diffi_inliers, fi_diffi_outliers
+#     return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, fi_diffi_inliers, fi_diffi_outliers
+
+def diffi_ranks_evaluation_only(X_test, y_test, pruned_if):
+    f1s, avps = [], []
+    fis, fis_out, fis_in = [], [], []
+
+    for f in range(len(pruned_if)):
+        # get predictions
+        y_pred = pruned_if[f].predict(X_test)
+        y_pred = np.where(y_pred == -1, 1, 0)  # map -1 to 1 (anomalies), 1 to 0 (inliers)
+        anomaly_scores = 0.5 * (-pruned_if[f].decision_function(X_test) + 1)
+        # compute performance metrics
+        f1 = f1_score(y_test, y_pred)
+        avg_precision = average_precision_score(y_test, anomaly_scores)
+        # compute feature importance
+        fi, _, fi_outliers_per_tree, fi_inliers_per_tree = interp.diffi_ib_per_tree(pruned_if[f], X_test)
+
+        fis.append(fi)
+        fis_out.append(fi_outliers_per_tree)
+        fis_in.append(fi_inliers_per_tree)
+        f1s.append(f1)
+        avps.append(avg_precision)
+
+    return np.asarray(f1s), np.asarray(avps), np.asarray(fis), fis_out, fis_in
