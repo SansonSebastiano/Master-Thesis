@@ -78,3 +78,9 @@ cache/
 
 # ignore odds_datesets folder
 odds_datasets/
+
+# ignore older versions of notebooks folder
+old_notebooks/
+
+# ignore revised notebook version
+diffi_odds_revised.ipynb
