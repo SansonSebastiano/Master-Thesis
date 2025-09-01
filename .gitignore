@@ -84,3 +84,9 @@ old_notebooks/
 
 # ignore revised notebook version
 diffi_odds_revised.ipynb
+
+# ignore results folder
+results/
+
+# ignore results_analysis.ipynb
+results_analysis.ipynb
