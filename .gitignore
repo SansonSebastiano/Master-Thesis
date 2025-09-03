@@ -90,3 +90,6 @@ results/
 
 # ignore results_analysis.ipynb
 results_analysis.ipynb
+
+# tep dataset
+tep_datasets/
