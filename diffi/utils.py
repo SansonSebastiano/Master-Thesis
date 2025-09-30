@@ -168,6 +168,7 @@ def diffi_ranks(X_train, X_test, y_test, seed, n_iters, contamination: float | s
     used_features = []
     f1s, avps = [], []
     fis, fis_out, fis_in = [], [], []
+    ys_pred = []
 
     for k in range(n_iters): 
 
@@ -203,8 +204,9 @@ def diffi_ranks(X_train, X_test, y_test, seed, n_iters, contamination: float | s
         fis.append(fi)
         fis_out.append(fi_outliers_per_tree)
         fis_in.append(fi_inliers_per_tree)
+        ys_pred.append(y_pred)
 
-    return np.asarray(f1s), np.asarray(avps), np.asarray(fis), models, used_features, fis_out, fis_in
+    return np.asarray(f1s), np.asarray(avps), np.asarray(fis), models, used_features, fis_out, fis_in, np.asarray(ys_pred)
 
 
 def fs_datasets_hyperparams(dataset):

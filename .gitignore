@@ -93,3 +93,10 @@ results_analysis.ipynb
 
 # tep dataset
 tep_dataset/
+
+# prove folder
+prove/
+
+diffi_syn_depth.ipynb
+diffi_odds_depth.ipynb
+diffi_tep_depth.ipynb
