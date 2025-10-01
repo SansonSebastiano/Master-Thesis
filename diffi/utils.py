@@ -168,7 +168,7 @@ def diffi_ranks(X_train, X_test, y_test, seed, n_iters, contamination: float | s
     used_features = []
     f1s, avps = [], []
     fis, fis_out, fis_in = [], [], []
-    ys_pred = []
+    ys_pred_train = []
 
     for k in range(n_iters): 
 
@@ -181,14 +181,16 @@ def diffi_ranks(X_train, X_test, y_test, seed, n_iters, contamination: float | s
         # tra 0 e 1 dove 1 = anomalous
 
         # -1 for anomalies, 1 for inliers are returned
-        y_pred = iforest.predict(X_test)
+        y_pred_train = iforest.predict(X_train)
+        y_pred_test = iforest.predict(X_test)
         # mapping: -1 -> 1 (anomalies), 1 -> 0 (inliers)
         # the true labels are 0 for inliers and 1 for anomalies
-        y_pred = np.where(y_pred == -1, 1, 0)
+        y_pred_train = np.where(y_pred_train == -1, 1, 0)
+        y_pred_test = np.where(y_pred_test == -1, 1, 0)
         anomaly_scores = 0.5 *(-iforest.decision_function(X_test) + 1) 
 
         # compute performance metrics
-        f1 = f1_score(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred_test)
         avg_precision = average_precision_score(y_test, anomaly_scores)
 
         # compute feature importance
@@ -204,9 +206,9 @@ def diffi_ranks(X_train, X_test, y_test, seed, n_iters, contamination: float | s
         fis.append(fi)
         fis_out.append(fi_outliers_per_tree)
         fis_in.append(fi_inliers_per_tree)
-        ys_pred.append(y_pred)
+        ys_pred_train.append(y_pred_train)
 
-    return np.asarray(f1s), np.asarray(avps), np.asarray(fis), models, used_features, fis_out, fis_in, np.asarray(ys_pred)
+    return np.asarray(f1s), np.asarray(avps), np.asarray(fis), models, used_features, fis_out, fis_in, np.asarray(ys_pred_train)
 
 
 def fs_datasets_hyperparams(dataset):
@@ -321,7 +323,7 @@ def fs_datasets_hyperparams(dataset):
 
 #     return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, fi_diffi_inliers, fi_diffi_outliers
 
-def diffi_ranks_evaluation_only(X_test, y_test, pruned_if):
+def diffi_ranks_evaluation_only(X_test:np.ndarray, y_test:np.ndarray, pruned_if:IsolationForest):
     f1s, avps = [], []
     fis, fis_out, fis_in = [], [], []
 
