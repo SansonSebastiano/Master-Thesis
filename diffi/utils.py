@@ -181,12 +181,13 @@ def diffi_ranks(X_train, X_test, y_test, seed, n_iters, contamination: float | s
         # tra 0 e 1 dove 1 = anomalous
 
         # -1 for anomalies, 1 for inliers are returned
-        y_pred_train = iforest.predict(X_train)
-        y_pred_test = iforest.predict(X_test)
+        y_pred_train = iforest.predict(X_train)     # for depth computation
+        y_pred_test = iforest.predict(X_test)       # for performance metrics
         # mapping: -1 -> 1 (anomalies), 1 -> 0 (inliers)
         # the true labels are 0 for inliers and 1 for anomalies
         y_pred_train = np.where(y_pred_train == -1, 1, 0)
         y_pred_test = np.where(y_pred_test == -1, 1, 0)
+        
         anomaly_scores = 0.5 *(-iforest.decision_function(X_test) + 1) 
 
         # compute performance metrics
