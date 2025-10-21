@@ -97,6 +97,4 @@ tep_dataset/
 # prove folder
 prove/
 
-diffi_syn_depth.ipynb
-diffi_odds_depth.ipynb
-diffi_tep_depth.ipynb
+odds_depth copy.ipynb
