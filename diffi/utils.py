@@ -324,7 +324,7 @@ def fs_datasets_hyperparams(dataset):
 
 #     return sorted_idx, avg_f1, fi_diffi_means, fi_diffi_std, features_per_forest, fi_diffi_all, fi_diffi_inliers, fi_diffi_outliers
 
-def diffi_ranks_evaluation_only(X_test:np.ndarray, y_test:np.ndarray, pruned_if:IsolationForest):
+def diffi_ranks_evaluation_only(X_test:np.ndarray, y_test:np.ndarray, pruned_if:IsolationForest, X_train:np.ndarray):
     f1s, avps = [], []
     fis, fis_out, fis_in = [], [], []
 
@@ -337,7 +337,7 @@ def diffi_ranks_evaluation_only(X_test:np.ndarray, y_test:np.ndarray, pruned_if:
         f1 = f1_score(y_test, y_pred)
         avg_precision = average_precision_score(y_test, anomaly_scores)
         # compute feature importance
-        fi, _, fi_outliers_per_tree, fi_inliers_per_tree = interp.diffi_ib_per_tree(pruned_if[f], X_test)
+        fi, _, fi_outliers_per_tree, fi_inliers_per_tree = interp.diffi_ib_per_tree(pruned_if[f], X_train)
 
         fis.append(fi)
         fis_out.append(fi_outliers_per_tree)
