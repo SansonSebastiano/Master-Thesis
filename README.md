@@ -68,5 +68,6 @@ pruning, in order to further improve the performance and efficiency of the Isola
 Forest model.
 
 ## Further reading
-Read `thesis.pdf` for a complete description of the thesis work.
-Read `thesis_presentation.pdf` for a brief description of the thesis work.
+Read [the thesis file](https://github.com/SansonSebastiano/Master-Thesis/blob/main/thesis.pdf) for a complete description of the thesis work.
+
+Read [the presentation file](https://github.com/SansonSebastiano/Master-Thesis/blob/main/thesis_presentation.pdf) for a brief description of the thesis work.
