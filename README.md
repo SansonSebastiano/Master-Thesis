@@ -42,6 +42,7 @@ and prune trees that contribute to overall performance of the ensemble.
 2. Investigating the intrinsic properties of the Isolation Forest, focusing in par-
 ticular on the depth distribution to identify trees that may not be informative
 about ensemble performance.
+
 DIFFI, an explainable technique specifically tailored for Isolation Forest, is an
 algorithm that returns both global and local feature importance scores, which are
 not only useful for providing explanations of the model decisions to end-users, but
