@@ -97,4 +97,11 @@ tep_dataset/
 # prove folder
 prove/
 
+# ignore copy of odds_depth notebook
 odds_depth copy.ipynb
+
+table_creation.ipynb
+
+mean_estimators.ipynb
+
+n_estimators/
